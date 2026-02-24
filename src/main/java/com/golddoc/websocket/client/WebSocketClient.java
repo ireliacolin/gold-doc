@@ -91,9 +91,13 @@ public class WebSocketClient {
         }
     }
     
-    private void sendConnectMessage() throws Exception {
-        WebSocketMessage connectMessage = WebSocketMessage.connect(userId);
-        sendMessage(connectMessage);
+    private void sendConnectMessage() {
+        try {
+            WebSocketMessage connectMessage = WebSocketMessage.connect(userId);
+            sendMessage(connectMessage);
+        } catch (Exception e) {
+            log.error("Failed to send connect message", e);
+        }
     }
     
     public void sendMessage(WebSocketMessage message) throws Exception {

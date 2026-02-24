@@ -37,6 +37,7 @@ logging:
     com.golddoc: DEBUG
     org.springframework.web: INFO
     org.springframework.security: INFO
+    io.netty: INFO
 
 springdoc:
   api-docs:
@@ -50,11 +51,3 @@ websocket:
   server:
     port: 8081
     host: 0.0.0.0
-
-# Netty logging
-logging:
-  level:
-    com.golddoc: DEBUG
-    org.springframework.web: INFO
-    org.springframework.security: INFO
-    io.netty: INFO
