@@ -44,3 +44,17 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     operations-sorter: method
+
+# WebSocket Configuration
+websocket:
+  server:
+    port: 8081
+    host: 0.0.0.0
+
+# Netty logging
+logging:
+  level:
+    com.golddoc: DEBUG
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    io.netty: INFO

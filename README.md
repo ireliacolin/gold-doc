@@ -26,6 +26,7 @@ A Spring Boot-based document management system for the gold industry.
 - SpringDoc OpenAPI 3
 - JUnit 5 & Mockito
 - Maven
+- **Netty 4.1** (WebSocket server/client)
 
 ## Prerequisites
 
@@ -56,6 +57,8 @@ mvn spring-boot:run
 - H2 Console: http://localhost:8080/api/h2-console
 - Swagger UI: http://localhost:8080/api/swagger-ui.html
 - API Docs: http://localhost:8080/api/api-docs
+- **WebSocket Server**: ws://localhost:8081/ws
+- **WebSocket Status**: http://localhost:8080/api/websocket/status
 
 Default credentials:
 - Username: admin
@@ -75,7 +78,12 @@ Default credentials:
 - `GET /api/documents/stats` - Get document statistics
 
 ### Health Check
-- `GET /api/documents/health` - Health check endpoint
+- `GET /api/documents/health` - Document service health check
+- `GET /api/websocket/health` - WebSocket server health check
+
+### WebSocket Management
+- `GET /api/websocket/status` - Get WebSocket server status and connected users
+- `GET /api/websocket/info` - Get WebSocket connection information
 
 ## Project Structure
 
@@ -83,13 +91,24 @@ Default credentials:
 src/main/java/com/golddoc/
 ├── GoldDocApplication.java          # Main application class
 ├── controller/
-│   └── DocumentController.java      # REST controller
+│   ├── DocumentController.java      # REST controller
+│   └── WebSocketController.java     # WebSocket management API
 ├── model/
-│   └── Document.java                # Entity class
+│   ├── Document.java                # Entity class
+│   └── websocket/
+│       └── WebSocketMessage.java    # WebSocket message model
 ├── repository/
 │   └── DocumentRepository.java      # JPA repository
-└── service/
-    └── DocumentService.java         # Business logic
+├── service/
+│   └── DocumentService.java         # Business logic
+├── websocket/
+│   ├── NettyWebSocketServer.java    # WebSocket server
+│   ├── handler/
+│   │   ├── WebSocketServerHandler.java
+│   │   └── WebSocketServerInitializer.java
+│   └── client/
+│       ├── WebSocketClient.java
+│       └── WebSocketClientHandler.java
 
 src/main/resources/
 ├── application.yml                  # Application configuration
@@ -97,8 +116,10 @@ src/main/resources/
 
 src/test/java/com/golddoc/
 ├── GoldDocApplicationTests.java     # Main test class
-└── service/
-    └── DocumentServiceTest.java     # Service unit tests
+├── service/
+│   └── DocumentServiceTest.java     # Service unit tests
+└── websocket/
+    └── WebSocketTestClient.java     # WebSocket test client
 ```
 
 ## Testing
@@ -192,6 +213,86 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## WebSocket Usage
+
+### WebSocket Server
+The application includes a Netty-based WebSocket server running on port 8081.
+
+#### Connection URL
+```
+ws://localhost:8081/ws
+```
+
+#### Message Format
+```json
+{
+  "type": "MESSAGE",
+  "sender": "user-id",
+  "content": "Hello World",
+  "room": "general"
+}
+```
+
+#### Message Types
+- `CONNECT` - Connection established
+- `MESSAGE` - Regular message (can specify room)
+- `BROADCAST` - Broadcast to all connected users
+- `NOTIFICATION` - System notification
+- `ERROR` - Error message
+- `DISCONNECT` - Connection closed
+
+### WebSocket Client Example
+
+```java
+// Create client
+WebSocketClient client = new WebSocketClient("ws://localhost:8081/ws", "user123");
+
+// Set message handler
+client.setMessageConsumer(message -> {
+    System.out.printf("[%s] %s: %s%n", 
+        message.getTimestamp(), 
+        message.getSender(),
+        message.getContent());
+});
+
+// Connect
+client.connect();
+
+// Send message
+client.sendTextMessage("Hello from user123", "general");
+
+// Send broadcast
+client.sendBroadcast("This is a broadcast message");
+
+// Disconnect
+client.disconnect();
+```
+
+### Running Test Client
+```bash
+# Run test client
+mvn compile exec:java -Dexec.mainClass="com.golddoc.websocket.WebSocketTestClient" -Dexec.args="test-user-1"
+
+# Or compile and run manually
+javac -cp "target/classes:target/test-classes:$(find ~/.m2/repository -name '*.jar' | tr '\n' ':')" \
+    src/test/java/com/golddoc/websocket/WebSocketTestClient.java
+java -cp "target/classes:target/test-classes:$(find ~/.m2/repository -name '*.jar' | tr '\n' ':')" \
+    com.golddoc.websocket.WebSocketTestClient test-user-1
+```
+
+### Features
+1. **Room-based messaging** - Send messages to specific rooms
+2. **Broadcast messaging** - Send messages to all connected users
+3. **User management** - Track connected users and their rooms
+4. **Automatic reconnection** - Handles connection drops gracefully
+5. **JSON message format** - Structured message format with type safety
+6. **Connection status API** - REST API to monitor WebSocket server status
+
+### Monitoring
+- Check WebSocket server status: `GET /api/websocket/status`
+- Health check: `GET /api/websocket/health`
+- Connection info: `GET /api/websocket/info`
 
 ## Support
 
