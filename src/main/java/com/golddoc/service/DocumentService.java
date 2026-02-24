@@ -43,7 +43,7 @@ public class DocumentService {
                     existingDocument.setStatus(documentDetails.getStatus());
                     existingDocument.setFilePath(documentDetails.getFilePath());
                     existingDocument.setTags(documentDetails.getTags());
-                    existingDocument.onUpdate();
+                    existingDocument.setUpdatedAt(LocalDateTime.now());
                     return documentRepository.save(existingDocument);
                 });
     }
